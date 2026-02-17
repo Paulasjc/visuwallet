@@ -32,7 +32,7 @@ export const CategoryChart = ({ data }: CategoryChartProps) => {
             label          // Muestra etiquetas en cada sección
           >
             {/* 3. Mapea los datos para asignar un color a cada celda (sección) */}
-            {data.map((entry, index) => (
+            {data.map((_entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
