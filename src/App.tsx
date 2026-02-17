@@ -1,14 +1,19 @@
-
+import { SummaryCard } from './components/dashboard/SummaryCard'
 import './App.css'
 
 function App() {
  
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-      <h1 className="text-4xl font-bold text-sky-400 drop-shadow-lg">
-        ¡VisuWallet con Tailwind v4! 🚀
-      </h1>
+    <div className='p-8'>
+      <h1>Mi Dashboard</h1>
+      <div className='grid gap-4 md:grid-cols-3'>
+      <SummaryCard title='Ingresos totales' value={2800} />
+      <SummaryCard title="Gastos Totales" value={-750.20} />
+      <SummaryCard title="Balance Neto" value={1050.55} />
+
+      </div>
+      
     </div>
   )
 }
