@@ -1,8 +1,8 @@
 // src/lib/parser.ts
 
-// CORRECCIÓN 1: Importa el tipo 'PapaParseError' junto con 'Papa'.
 import Papa, { type ParseError } from 'papaparse';
 import { type Transaction } from '@/types';
+import { categorizeTransaction } from './categorizer'; // Importamos la función
 
 interface ParseCsvOptions {
   csvText: string;
@@ -22,30 +22,40 @@ export const parseCsv = (options: ParseCsvOptions): ParseCsvResult => {
     dynamicTyping: true,
   });
 
-  const transactions: Transaction[] = [];
+  const transactions: Transaction[] = []; // Inicializamos el array de transacciones aquí
   const parsingErrors: ParseCsvResult['errors'] = [];
 
+  // --- BUCLE PRINCIPAL ---
+  // Recorremos cada fila que nos da PapaParse
   for (const row of result.data as any[]) {
+    // 1. Extraemos los datos de la fila actual
     const date = row.Fecha || row.Date || row.date;
     const description = row.Concepto || row.Description || row.description;
     const amount = row.Importe || row.Amount || row.amount;
 
+    // 2. Validación: si faltan datos esenciales, saltamos a la siguiente fila
     if (!date || !description || amount === undefined) {
       continue;
     }
 
+    // 3. Creamos un objeto de transacción con los datos limpios
     const transaction: Transaction = {
       date: new Date(date),
       description: String(description),
       amount: Number(amount),
-      category: 'Sin categoría',
+      // Asignamos una categoría temporal que vamos a sobreescribir
+      category: '', 
     };
 
+    // 4. ¡MOMENTO CLAVE!
+    //    Llamamos al categorizador para que nos dé la categoría correcta
+    //    y la asignamos a nuestra transacción.
+    transaction.category = categorizeTransaction(transaction);
+
+    // 5. Añadimos la transacción completa (con su categoría) al array de resultados
     transactions.push(transaction);
   }
 
-  // CORRECCIÓN 2: Añade el tipo 'PapaParseError' al parámetro 'e'.
-  // Esto le dice a TypeScript que 'e' siempre tendrá las propiedades 'message' y 'row'.
   const allErrors = [
     ...parsingErrors,
     ...result.errors
@@ -53,7 +63,6 @@ export const parseCsv = (options: ParseCsvOptions): ParseCsvResult => {
       .map((e: ParseError & { row: number }) => ({ message: e.message, row: e.row })),
   ];
 
-  // Ahora, la línea del 'filter' que añadiste ya no es necesaria.
   return {
     transactions,
     errors: allErrors,
