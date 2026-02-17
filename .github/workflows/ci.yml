@@ -1,0 +1,48 @@
+# .github/workflows/ci.yml
+
+# Nombre del workflow que aparecerá en la pestaña "Actions" de GitHub
+name: VisuWallet CI
+
+# 'on' define cuándo se debe ejecutar este workflow
+on:
+  # Ejecutar en cada push a las ramas 'main' y 'dev'
+  push:
+    branches: [ main, dev ]
+  # Ejecutar también cuando se abre un Pull Request hacia 'main' o 'dev'
+  pull_request:
+    branches: [ main, dev ]
+
+# 'jobs' define las tareas a realizar. Podemos tener varias.
+jobs:
+  # Nombramos nuestro único job como 'build-and-test'
+  build-and-test:
+    # 'runs-on' especifica la máquina virtual que usará GitHub para ejecutar el job.
+    # 'ubuntu-latest' es una opción estándar y fiable.
+    runs-on: ubuntu-latest
+
+    # 'steps' son los comandos que se ejecutarán secuencialmente.
+    steps:
+      # 1. Descargar el código del repositorio a la máquina virtual
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Configurar el entorno de Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Usamos una versión LTS (Long-Term Support) de Node.js
+          cache: 'npm' # Habilitamos el caché de npm para acelerar las instalaciones
+
+      # 3. Instalar todas las dependencias del proyecto
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Ejecutar los tests
+      #    Este es el paso clave. Si este comando falla, todo el workflow falla.
+      - name: Run tests
+        run: npm run test
+
+      # 5. (Opcional pero recomendado) Construir el proyecto para producción
+      #    Esto verifica que no hay errores de tipo o de build que los tests no capturan.
+      - name: Build project
+        run: npm run build
