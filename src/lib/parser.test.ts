@@ -1,49 +1,80 @@
-// src/lib/parser.test.ts
-
 import { describe, it, expect } from 'vitest';
-import { parseCsv } from './parser'; // La función que vamos a probar
+import { parseCsv } from './parser';
 
-// describe agrupa los tests para nuestra función parseCsv
 describe('parseCsv', () => {
-
-  // it define un caso de prueba específico: el caso feliz.
-  it('should parse a valid CSV string and return an array of transactions', () => {
-    // 1. ARRANGE
+  it('parses CSV with Spanish headers Fecha, Concepto, Importe (auto-detect)', () => {
     const csvText = `Fecha,Concepto,Importe\n2024-01-15,Compra online,-75.50\n2024-01-16,Nómina,1800.00`;
 
-    // 2. ACT
     const result = parseCsv({ csvText });
 
-    // 3. ASSERT
     expect(result.errors).toHaveLength(0);
     expect(result.transactions).toHaveLength(2);
-    expect(result.transactions[0]).toEqual({
-      date: new Date('2024-01-15'),
+    expect(result.transactions[0]).toMatchObject({
       description: 'Compra online',
-      amount: -75.50,
+      amount: -75.5,
       category: 'Otros Gastos',
     });
-    expect(result.transactions[1]).toEqual({
-      date: new Date('2024-01-16'),
+    expect(result.transactions[0].date).toEqual(new Date('2024-01-15'));
+    expect(result.transactions[1]).toMatchObject({
       description: 'Nómina',
-      amount: 1800.00,
+      amount: 1800,
       category: 'Nómina',
     });
+    expect(result.transactions[1].date).toEqual(new Date('2024-01-16'));
   });
 
-  // NUEVO TEST: para filas con datos incompletos
-  it('should skip rows with missing essential data', () => {
-    // ARRANGE
+  it('parses CSV with English headers when mapping is provided', () => {
+    const csvText = `Date,Description,Amount\n2024-01-15,Shop,-50\n2024-01-16,Salary,2000`;
+    const result = parseCsv({
+      csvText,
+      columnMapping: { date: 'Date', description: 'Description', amount: 'Amount' },
+    });
+
+    expect(result.transactions).toHaveLength(2);
+    expect(result.transactions[0].description).toBe('Shop');
+    expect(result.transactions[0].amount).toBe(-50);
+    expect(result.transactions[1].description).toBe('Salary');
+    expect(result.transactions[1].amount).toBe(2000);
+  });
+
+  it('parses European amount format (1.234,56) with semicolon delimiter', () => {
+    const csvText = `Fecha;Concepto;Importe\n15/01/2024;Compra;1.234,56`;
+    const result = parseCsv({
+      csvText,
+      columnMapping: { date: 'Fecha', description: 'Concepto', amount: 'Importe' },
+    });
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].amount).toBe(1234.56);
+  });
+
+  it('parses DD/MM/YYYY date and European decimal amount', () => {
+    const csvText = `Fecha;Concepto;Importe\n15/01/2024;Café;-3,50`;
+    const result = parseCsv({
+      csvText,
+      columnMapping: { date: 'Fecha', description: 'Concepto', amount: 'Importe' },
+    });
+
+    expect(result.transactions).toHaveLength(1);
+    expect(result.transactions[0].date).toEqual(new Date(2024, 0, 15));
+    expect(result.transactions[0].amount).toBe(-3.5);
+  });
+
+  it('skips rows with missing essential data', () => {
     const csvText = `Fecha,Concepto,Importe\n2024-01-15,Compra online,-75.50\n2024-01-16,Nómina,\n2024-01-17,Cafetería,-3.20`;
-  
-    // ACT
+
     const result = parseCsv({ csvText });
-  
-    // ASSERT
+
     expect(result.errors).toHaveLength(0);
     expect(result.transactions).toHaveLength(2);
     expect(result.transactions[0].description).toBe('Compra online');
     expect(result.transactions[1].description).toBe('Cafetería');
-  }); // <--- La llave de cierre del 'it'
+  });
 
-}); // <--- La llave de cierre del 'describe'
+  it('returns empty transactions when headers do not match any column role', () => {
+    const csvText = `ColumnaX,ColumnaY,ColumnaZ\n1,2,3`;
+    const result = parseCsv({ csvText });
+
+    expect(result.transactions).toHaveLength(0);
+  });
+});

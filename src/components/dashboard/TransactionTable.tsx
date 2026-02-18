@@ -1,19 +1,4 @@
-import { type Transaction } from "@/types";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableCaption,
-} from "../ui/table";
+import { type Transaction } from '@/types';
 
 type TransactionTableProps = {
   transactions: Transaction[];
@@ -21,36 +6,48 @@ type TransactionTableProps = {
 
 export const TransactionTable = ({ transactions }: TransactionTableProps) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Transacciones</CardTitle>
-      </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <Table>
-            <TableCaption>Una lista de tus transacciones recientes.</TableCaption>
-            <TableHeader>
-                <TableRow>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Concepto</TableHead>
-                    <TableHead>Categoría</TableHead>
-                    <TableHead className="text-right">Importe</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {transactions.map((transaction, index) => (
-                    <TableRow key={index}>
-                        <TableCell>{transaction.date.toLocaleDateString('es-ES')}</TableCell>
-                        <TableCell>{transaction.description}</TableCell>
-                        <TableCell>{transaction.category}</TableCell>
-                        <TableCell className="text-right font-medium tabular-nums">
-                        {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(transaction.amount)}
-                      </TableCell>
-                    </TableRow>
-                ))}
-
-            </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+    <div className="rounded-2xl border-2 border-[#ad7c92] bg-[#ffffff] overflow-hidden shadow-sm">
+      <div className="px-6 py-4 border-b-2 border-[#e4cedb]">
+        <h3 className="text-sm font-medium tracking-wide text-[#784b5f]">Transacciones</h3>
+        <p className="text-xs text-[#784b5f]/80 mt-0.5">Lista de tus movimientos recientes.</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-[#784b5f] text-[#f6eff3]">
+              <th className="text-left font-medium py-3 px-4">Fecha</th>
+              <th className="text-left font-medium py-3 px-4">Concepto</th>
+              <th className="text-left font-medium py-3 px-4">Categoría</th>
+              <th className="text-right font-medium py-3 px-4">Importe</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.map((transaction, index) => (
+              <tr
+                key={index}
+                className={
+                  index % 2 === 0
+                    ? 'bg-[#ffffff] text-[#784b5f] border-b border-[#e4cedb]'
+                    : 'bg-[#e4cedb]/50 text-[#784b5f] border-b border-[#e4cedb]'
+                }
+              >
+                <td className="py-3 px-4">{transaction.date.toLocaleDateString('es-ES')}</td>
+                <td className="py-3 px-4">{transaction.description}</td>
+                <td className="py-3 px-4">{transaction.category}</td>
+                <td
+                  className={`py-3 px-4 text-right font-medium tabular-nums ${
+                    transaction.amount >= 0 ? 'text-[#784b5f]' : 'text-[#ad7c92]'
+                  }`}
+                >
+                  {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(
+                    transaction.amount
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 };
