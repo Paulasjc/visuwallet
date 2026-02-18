@@ -10,7 +10,7 @@ import { prepareChartData, type ChartData } from './lib/chart-utils';
 import { SummaryCard } from './components/dashboard/SummaryCard';
 import { TransactionTable } from './components/dashboard/TransactionTable';
 import { CategoryChart } from './components/dashboard/CategoryChart';
-import { FileUpload } from './components/dashboard/FileUpload';
+import { EmptyState } from './components/dashboard/EmptyState';
 
 function App() {
   // --- ESTADOS DE LA APLICACIÓN ---
@@ -22,6 +22,8 @@ function App() {
   // Estados para la experiencia de usuario (carga y errores)
   const [loading, setLoading] = useState(false); // Empieza en 'false'
   const [error, setError] = useState<string | null>(null);
+
+
 
   // --- MANEJADOR DE EVENTOS ---
   const handleFileSelected = (fileContent: string) => {
@@ -51,7 +53,7 @@ function App() {
       // 4. Si algo falla en el 'try', capturamos el error
       const errorMessage = err instanceof Error ? err.message : "Ocurrió un error desconocido.";
       setError(errorMessage);
-      
+
       // Y limpiamos cualquier dato antiguo que pudiera haber en pantalla
       setTransactions([]);
       setSummaryData(null);
@@ -65,42 +67,64 @@ function App() {
 
   // --- RENDERIZADO DEL COMPONENTE ---
   return (
-    <div className='p-8 max-w-7xl mx-auto'> {/* Centramos el contenido y le damos un ancho máximo */}
-      <header className='mb-8'>
-        <h1 className='text-4xl font-bold text-gray-800'>VisuWallet</h1>
-        <p className='text-gray-500'>Transforma tus extractos bancarios en claridad financiera.</p>
-      </header>
-      
-      <FileUpload onFileSelected={handleFileSelected} />
-
-      {/* Muestra el indicador de carga si está activo */}
-      {loading && <p className="mt-4 text-blue-600">Cargando y procesando datos...</p>}
-
-      {/* Muestra el mensaje de error si existe */}
-      {error && <p className="mt-4 text-red-600 font-semibold">Error: {error}</p>}
-
-      {/* Contenedor del Dashboard: solo se muestra si no hay carga, no hay error y hay datos */}
-      {!loading && !error && summaryData && (
-        <main className='mt-8'>
-          {/* Sección de Resumen */}
-          <div className='grid gap-4 md:grid-cols-3'>
-            <SummaryCard title='Ingresos Totales' value={summaryData.totalIncome} />
-            <SummaryCard title="Gastos Totales" value={summaryData.totalExpenses} />
-            <SummaryCard title="Balance Neto" value={summaryData.netBalance} />
-          </div>
-
-          {/* Sección de Detalles */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mt-8">
-            <div className="lg:col-span-3">
-              <TransactionTable transactions={transactions} />
-            </div>
-            <div className="lg:col-span-2">
-              <CategoryChart data={chartData} />
-            </div>
-          </div>
-        </main>
+    <>
+      {!loading && !error && !summaryData && (
+        <EmptyState onFileSelected={handleFileSelected} />
       )}
-    </div>
+
+      {loading && (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8" role="status" aria-live="polite">
+          <div className="h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" aria-hidden />
+          <p className="text-muted-foreground">Cargando y procesando datos...</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-8 max-w-7xl mx-auto" role="alert">
+          <div className="rounded-xl border border-destructive/50 bg-destructive/10 p-6">
+            <p className="font-semibold text-destructive">Error</p>
+            <p className="mt-2 text-foreground">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && summaryData && (
+        <div className="min-h-screen flex flex-col">
+          <header className="border-b border-border bg-card px-6 py-4">
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <h1 className="text-xl font-semibold text-foreground">VisuWallet</h1>
+              <button
+                type="button"
+                onClick={() => {
+                  setTransactions([]);
+                  setSummaryData(null);
+                  setChartData([]);
+                  setError(null);
+                }}
+                className="text-sm font-medium text-primary hover:underline focus-visible:outline focus-visible:ring-2 focus-visible:ring-ring rounded"
+              >
+                Subir otro archivo
+              </button>
+            </div>
+          </header>
+          <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
+            <section className="grid gap-4 md:grid-cols-3" aria-label="Resumen">
+              <SummaryCard title="Ingresos Totales" value={summaryData.totalIncome} />
+              <SummaryCard title="Gastos Totales" value={summaryData.totalExpenses} />
+              <SummaryCard title="Balance Neto" value={summaryData.netBalance} />
+            </section>
+            <section className="grid grid-cols-1 lg:grid-cols-5 gap-8 mt-8" aria-label="Detalles">
+              <div className="lg:col-span-3">
+                <TransactionTable transactions={transactions} />
+              </div>
+              <div className="lg:col-span-2">
+                <CategoryChart data={chartData} />
+              </div>
+            </section>
+          </main>
+        </div>
+      )}
+    </>
   );
 }
 

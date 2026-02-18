@@ -20,8 +20,9 @@ export const SummaryCard = ({title, value}: SummaryCardProps) => {
                 <CardTitle>{title}</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className={ `text-2xl font-bold ${value >= 0 ? 'text-green-600' : 'text-red-600'}`
-                }>{formattedValue}</p>
+                <p className={`text-2xl font-bold ${value >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {formattedValue}
+              </p>
             </CardContent>
 
         </Card>

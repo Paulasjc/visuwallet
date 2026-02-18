@@ -1,5 +1,10 @@
 import { type ChartData } from "@/lib/chart-utils";
-// 1. Importa los componentes de Recharts
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   ResponsiveContainer,
   PieChart,
@@ -8,7 +13,6 @@ import {
   Tooltip,
 } from "recharts";
 
-// (Opcional) Define una lista de colores para las categorías
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
 type CategoryChartProps = {
@@ -17,8 +21,13 @@ type CategoryChartProps = {
 
 export const CategoryChart = ({ data }: CategoryChartProps) => {
   return (
-    <div className="h-[350px]"> {/* Damos una altura fija al contenedor del gráfico */}
-      <ResponsiveContainer width="100%" height="100%">
+    <Card>
+      <CardHeader>
+        <CardTitle>Gastos por categoría</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[350px]">
+          <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           {/* 2. Configura el componente Pie */}
           <Pie
@@ -46,7 +55,9 @@ export const CategoryChart = ({ data }: CategoryChartProps) => {
             }
           />
         </PieChart>
-      </ResponsiveContainer>
-    </div>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
