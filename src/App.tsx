@@ -1,106 +1,162 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
-// Importaciones de nuestros tipos y lógica
 import { type Transaction } from './types';
-import { parseCsv } from './lib/parser';
+import { parseCsv, type ColumnMapping } from './lib/parser';
+import { getCsvHeaders, detectColumnMapping } from './lib/csv-columns';
 import { calculateSummary, type SummaryData } from './lib/calculator';
 import { prepareChartData, type ChartData } from './lib/chart-utils';
 
-// Importaciones de nuestros componentes de UI
 import { SummaryCard } from './components/dashboard/SummaryCard';
 import { TransactionTable } from './components/dashboard/TransactionTable';
 import { CategoryChart } from './components/dashboard/CategoryChart';
-import { FileUpload } from './components/dashboard/FileUpload';
+import { ColumnMappingForm } from './components/dashboard/ColumnMappingForm';
+import { EmptyState } from './components/dashboard/EmptyState';
 
 function App() {
-  // --- ESTADOS DE LA APLICACIÓN ---
-  // Estados para los datos del dashboard
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [chartData, setChartData] = useState<ChartData[]>([]);
-
-  // Estados para la experiencia de usuario (carga y errores)
-  const [loading, setLoading] = useState(false); // Empieza en 'false'
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [csvText, setCsvText] = useState<string | null>(null);
+  const [columnMapping, setColumnMapping] = useState<ColumnMapping | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- MANEJADOR DE EVENTOS ---
+  const applyParse = useCallback((text: string, mapping: ColumnMapping | null) => {
+    const parsed = parseCsv({ csvText: text, columnMapping: mapping ?? undefined });
+    setTransactions(parsed.transactions);
+    setSummaryData(calculateSummary(parsed.transactions));
+    setChartData(prepareChartData(parsed.transactions));
+  }, []);
+
   const handleFileSelected = (fileContent: string) => {
-    // 1. Inicia el proceso: activa el loading y limpia errores antiguos
     setLoading(true);
     setError(null);
-
-    // Usamos un bloque try...catch para manejar posibles fallos en el procesamiento
     try {
-      // 2. Procesamiento de datos
-      const parsedData = parseCsv({ csvText: fileContent });
-
-      // Comprobación de robustez: si el CSV está vacío o no tiene datos válidos
-      if (parsedData.transactions.length === 0) {
-        throw new Error("No se encontraron transacciones válidas en el archivo. Revisa el formato del CSV.");
-      }
-
-      const summary = calculateSummary(parsedData.transactions);
-      const chart = prepareChartData(parsedData.transactions);
-
-      // 3. Si todo va bien, actualizamos los estados con los nuevos datos
-      setTransactions(parsedData.transactions);
-      setSummaryData(summary);
-      setChartData(chart);
-
+      setCsvText(fileContent);
+      const headers = getCsvHeaders(fileContent);
+      const detected = detectColumnMapping(headers);
+      setColumnMapping(detected);
+      applyParse(fileContent, detected);
     } catch (err) {
-      // 4. Si algo falla en el 'try', capturamos el error
-      const errorMessage = err instanceof Error ? err.message : "Ocurrió un error desconocido.";
+      const errorMessage = err instanceof Error ? err.message : 'Ocurrió un error desconocido.';
       setError(errorMessage);
-      
-      // Y limpiamos cualquier dato antiguo que pudiera haber en pantalla
+      setCsvText(null);
+      setColumnMapping(null);
       setTransactions([]);
       setSummaryData(null);
       setChartData([]);
-
     } finally {
-      // 5. Al final, haya ido bien o mal, desactivamos el estado de carga
       setLoading(false);
     }
   };
 
-  // --- RENDERIZADO DEL COMPONENTE ---
+  const handleMappingChange = useCallback(
+    (mapping: ColumnMapping) => {
+      setColumnMapping(mapping);
+      if (csvText) applyParse(csvText, mapping);
+    },
+    [csvText, applyParse]
+  );
+
+  const handleDashboardFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const text = ev.target?.result as string;
+          handleFileSelected(text);
+        };
+        reader.readAsText(file);
+      }
+      e.target.value = '';
+    },
+    [handleFileSelected]
+  );
+
+  const showEmpty = !loading && !error && csvText === null;
+  const showDashboard = !loading && !error && csvText !== null;
+  const headers = csvText ? getCsvHeaders(csvText) : [];
+
   return (
-    <div className='p-8 max-w-7xl mx-auto'> {/* Centramos el contenido y le damos un ancho máximo */}
-      <header className='mb-8'>
-        <h1 className='text-4xl font-bold text-gray-800'>VisuWallet</h1>
-        <p className='text-gray-500'>Transforma tus extractos bancarios en claridad financiera.</p>
-      </header>
-      
-      <FileUpload onFileSelected={handleFileSelected} />
+    <>
+      {showEmpty && <EmptyState onFileSelected={handleFileSelected} />}
 
-      {/* Muestra el indicador de carga si está activo */}
-      {loading && <p className="mt-4 text-blue-600">Cargando y procesando datos...</p>}
-
-      {/* Muestra el mensaje de error si existe */}
-      {error && <p className="mt-4 text-red-600 font-semibold">Error: {error}</p>}
-
-      {/* Contenedor del Dashboard: solo se muestra si no hay carga, no hay error y hay datos */}
-      {!loading && !error && summaryData && (
-        <main className='mt-8'>
-          {/* Sección de Resumen */}
-          <div className='grid gap-4 md:grid-cols-3'>
-            <SummaryCard title='Ingresos Totales' value={summaryData.totalIncome} />
-            <SummaryCard title="Gastos Totales" value={summaryData.totalExpenses} />
-            <SummaryCard title="Balance Neto" value={summaryData.netBalance} />
-          </div>
-
-          {/* Sección de Detalles */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mt-8">
-            <div className="lg:col-span-3">
-              <TransactionTable transactions={transactions} />
-            </div>
-            <div className="lg:col-span-2">
-              <CategoryChart data={chartData} />
-            </div>
-          </div>
-        </main>
+      {loading && (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8 bg-[#975f78]" role="status" aria-live="polite">
+          <div className="h-10 w-10 rounded-full border-2 border-[#f6eff3] border-t-transparent animate-spin" aria-hidden />
+          <p className="text-[#f6eff3] text-sm">Cargando y procesando datos...</p>
+        </div>
       )}
-    </div>
+
+      {error && (
+        <div className="min-h-screen flex items-start justify-center p-8 bg-[#975f78]" role="alert">
+          <div className="rounded-2xl border-2 border-[#ad7c92] bg-[#e4cedb] p-6 max-w-xl w-full">
+            <p className="font-semibold text-[#784b5f]">Error</p>
+            <p className="mt-2 text-[#784b5f]">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {showDashboard && (
+        <div className="min-h-screen flex flex-col bg-[#975f78]">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleDashboardFileChange}
+            className="hidden"
+            aria-hidden
+          />
+          <header className="border-b-2 border-[#ad7c92] px-6 py-4 bg-[#975f78]">
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img src="/visuwallet-icon-2.png" alt="" className="h-8 w-8 object-contain" />
+                <h1 className="text-xl font-semibold text-[#f6eff3] tracking-wide">VisuWallet</h1>
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-sm font-medium text-[#f6eff3] hover:text-[#e4cedb] focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f6eff3] rounded-md px-3 py-1.5 transition-colors"
+              >
+                Subir otro archivo
+              </button>
+            </div>
+          </header>
+          <main className="flex-1 p-8 max-w-7xl mx-auto w-full">
+            <section className="mb-6" aria-label="Asignación de columnas">
+              <ColumnMappingForm
+                headers={headers}
+                mapping={columnMapping ?? { date: null, description: null, amount: null }}
+                onMappingChange={handleMappingChange}
+              />
+            </section>
+            {transactions.length === 0 ? (
+              <p className="text-[#f6eff3] text-sm">
+                No se encontraron transacciones. Revisa la asignación de columnas arriba o el formato del archivo.
+              </p>
+            ) : (
+              <>
+                <section className="grid gap-4 md:grid-cols-3" aria-label="Resumen">
+                  <SummaryCard title="Ingresos Totales" value={summaryData!.totalIncome} />
+                  <SummaryCard title="Gastos Totales" value={summaryData!.totalExpenses} />
+                  <SummaryCard title="Balance Neto" value={summaryData!.netBalance} />
+                </section>
+                <section className="grid grid-cols-1 lg:grid-cols-5 gap-8 mt-8" aria-label="Detalles">
+                  <div className="lg:col-span-3">
+                    <TransactionTable transactions={transactions} />
+                  </div>
+                  <div className="lg:col-span-2">
+                    <CategoryChart data={chartData} />
+                  </div>
+                </section>
+              </>
+            )}
+          </main>
+        </div>
+      )}
+    </>
   );
 }
 
