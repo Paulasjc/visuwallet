@@ -12,13 +12,13 @@ export const TransactionTable = ({ transactions }: TransactionTableProps) => {
         <p className="text-xs text-[#784b5f]/80 mt-0.5">Lista de tus movimientos recientes.</p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm table-fixed">
           <thead>
             <tr className="bg-[#784b5f] text-[#f6eff3]">
-              <th className="text-left font-medium py-3 px-4">Fecha</th>
-              <th className="text-left font-medium py-3 px-4">Concepto</th>
+              <th className="text-left font-medium py-3 px-4 w-24">Fecha</th>
+              <th className="text-left font-medium py-3 px-4 w-56">Concepto</th>
               <th className="text-left font-medium py-3 px-4">Categoría</th>
-              <th className="text-right font-medium py-3 px-4">Importe</th>
+              <th className="text-right font-medium py-3 px-4 w-28">Importe</th>
             </tr>
           </thead>
           <tbody>
@@ -32,7 +32,12 @@ export const TransactionTable = ({ transactions }: TransactionTableProps) => {
                 }
               >
                 <td className="py-3 px-4">{transaction.date.toLocaleDateString('es-ES')}</td>
-                <td className="py-3 px-4">{transaction.description}</td>
+                <td
+                  className="py-3 px-4 w-56 truncate"
+                  title={transaction.description}
+                >
+                  {transaction.description}
+                </td>
                 <td className="py-3 px-4">{transaction.category}</td>
                 <td
                   className={`py-3 px-4 text-right font-medium tabular-nums ${
