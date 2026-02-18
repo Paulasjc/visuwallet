@@ -21,13 +21,13 @@ describe('parseCsv', () => {
       date: new Date('2024-01-15'),
       description: 'Compra online',
       amount: -75.50,
-      category: 'Sin categoría',
+      category: 'Otros Gastos',
     });
     expect(result.transactions[1]).toEqual({
       date: new Date('2024-01-16'),
       description: 'Nómina',
       amount: 1800.00,
-      category: 'Sin categoría',
+      category: 'Nómina',
     });
   });
 
