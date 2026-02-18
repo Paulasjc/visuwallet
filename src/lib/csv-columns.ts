@@ -1,8 +1,6 @@
 // src/lib/csv-columns.ts
 // Auto-detección de columnas por palabras clave (multi-idioma).
 
-import Papa from 'papaparse';
-
 export type ColumnMapping = {
   date: string | null;
   description: string | null;

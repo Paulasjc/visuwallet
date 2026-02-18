@@ -3,7 +3,7 @@
 import Papa, { type ParseError } from 'papaparse';
 import { type Transaction } from '@/types';
 import { categorizeTransaction } from './categorizer';
-import { getCsvHeaders, detectColumnMapping, csvTextFromHeaderRow, type ColumnMapping } from './csv-columns';
+import { detectColumnMapping, csvTextFromHeaderRow, type ColumnMapping } from './csv-columns';
 import { parseAmount, parseDate } from './parse-helpers';
 
 export type { ColumnMapping };
