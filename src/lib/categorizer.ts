@@ -7,7 +7,7 @@ const CATEGORY_RULES: Record<string, string[]> = {
   'Alimentación': ['mercadona', 'lidl', 'carrefour', 'supermercado'],
   'Transporte': ['uber', 'cabify', 'metro', 'renfe'],
   'Ocio': ['netflix', 'spotify', 'hbo', 'cine', 'restaurante'],
-  'Nómina': ['nomina', 'transferencia de', 'ingreso'],
+  'Nómina': ['nomina', 'nómina', 'transferencia de', 'ingreso'],
 };
 
 // Esta será nuestra categoría por defecto si no encontramos ninguna coincidencia.
