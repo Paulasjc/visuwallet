@@ -1,15 +1,53 @@
+import { useState, useEffect } from 'react';
 import { type Transaction } from '@/types';
+
+const PAGE_SIZE = 8;
 
 type TransactionTableProps = {
   transactions: Transaction[];
 };
 
 export const TransactionTable = ({ transactions }: TransactionTableProps) => {
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [transactions]);
+
+  const totalPages = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageTransactions = transactions.slice(start, start + PAGE_SIZE);
+
   return (
     <div className="rounded-2xl border-2 border-[#ad7c92] bg-[#ffffff] overflow-hidden shadow-sm">
-      <div className="px-6 py-4 border-b-2 border-[#e4cedb]">
-        <h3 className="text-sm font-medium tracking-wide text-[#784b5f]">Transacciones</h3>
-        <p className="text-xs text-[#784b5f]/80 mt-0.5">Lista de tus movimientos recientes.</p>
+      <div className="px-6 py-4 border-b-2 border-[#e4cedb] flex items-center justify-between gap-4">
+        <div>
+          <h3 className="text-sm font-medium tracking-wide text-[#784b5f]">Transacciones</h3>
+          <p className="text-xs text-[#784b5f]/80 mt-0.5">Lista de tus movimientos recientes.</p>
+        </div>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-[#784b5f] bg-[#e4cedb] border-2 border-[#ad7c92] disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-[#ad7c92] hover:enabled:text-[#f6eff3] transition-colors text-lg font-medium leading-none"
+              aria-label="Página anterior"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-[#784b5f] bg-[#e4cedb] border-2 border-[#ad7c92] disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-[#ad7c92] hover:enabled:text-[#f6eff3] transition-colors text-lg font-medium leading-none"
+              aria-label="Página siguiente"
+            >
+              ›
+            </button>
+          </div>
+        )}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm table-fixed">
@@ -22,9 +60,9 @@ export const TransactionTable = ({ transactions }: TransactionTableProps) => {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((transaction, index) => (
+            {pageTransactions.map((transaction, index) => (
               <tr
-                key={index}
+                key={start + index}
                 className={
                   index % 2 === 0
                     ? 'bg-[#ffffff] text-[#784b5f] border-b border-[#e4cedb]'

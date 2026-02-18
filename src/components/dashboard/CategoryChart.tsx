@@ -7,6 +7,38 @@ type CategoryChartProps = {
   data: ChartData[];
 };
 
+const RADIAN = Math.PI / 180;
+
+function PieLabel(props: {
+  name?: string;
+  percent?: number;
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  outerRadius?: number;
+  x?: number;
+  y?: number;
+}) {
+  const { name = '', percent = 0, cx = 0, cy = 0, midAngle = 0, outerRadius = 95 } = props;
+  let { x, y } = props;
+  if (x == null || y == null) {
+    const radius = (outerRadius ?? 95) * 1.15;
+    x = cx + radius * Math.cos(-midAngle * RADIAN);
+    y = cy + radius * Math.sin(-midAngle * RADIAN);
+  }
+  const pct = `${(percent * 100).toFixed(0)}%`;
+  return (
+    <g>
+      <text x={x} y={y} dy={-4} textAnchor="middle" fill="#784b5f" fontSize={11} fontWeight={500}>
+        {name}
+      </text>
+      <text x={x} y={y} dy={10} textAnchor="middle" fill="#784b5f" fontSize={10} opacity={0.9}>
+        {pct}
+      </text>
+    </g>
+  );
+}
+
 export const CategoryChart = ({ data }: CategoryChartProps) => {
   return (
     <div className="rounded-2xl border-2 border-[#ad7c92] bg-[#ffffff] overflow-hidden shadow-sm">
@@ -23,9 +55,9 @@ export const CategoryChart = ({ data }: CategoryChartProps) => {
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                outerRadius={100}
+                outerRadius={95}
                 fill="#ad7c92"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={(labelProps) => <PieLabel {...labelProps} />}
               >
                 {data.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

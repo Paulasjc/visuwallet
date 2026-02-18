@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 import { type Transaction } from './types';
 import { parseCsv, type ColumnMapping } from './lib/parser';
@@ -20,6 +20,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [csvText, setCsvText] = useState<string | null>(null);
   const [columnMapping, setColumnMapping] = useState<ColumnMapping | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const applyParse = useCallback((text: string, mapping: ColumnMapping | null) => {
     const parsed = parseCsv({ csvText: text, columnMapping: mapping ?? undefined });
@@ -58,6 +59,22 @@ function App() {
     [csvText, applyParse]
   );
 
+  const handleDashboardFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const text = ev.target?.result as string;
+          handleFileSelected(text);
+        };
+        reader.readAsText(file);
+      }
+      e.target.value = '';
+    },
+    [handleFileSelected]
+  );
+
   const showEmpty = !loading && !error && csvText === null;
   const showDashboard = !loading && !error && csvText !== null;
   const headers = csvText ? getCsvHeaders(csvText) : [];
@@ -84,6 +101,14 @@ function App() {
 
       {showDashboard && (
         <div className="min-h-screen flex flex-col bg-[#975f78]">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleDashboardFileChange}
+            className="hidden"
+            aria-hidden
+          />
           <header className="border-b-2 border-[#ad7c92] px-6 py-4 bg-[#975f78]">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -92,14 +117,7 @@ function App() {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setCsvText(null);
-                  setColumnMapping(null);
-                  setTransactions([]);
-                  setSummaryData(null);
-                  setChartData([]);
-                  setError(null);
-                }}
+                onClick={() => fileInputRef.current?.click()}
                 className="text-sm font-medium text-[#f6eff3] hover:text-[#e4cedb] focus-visible:outline focus-visible:ring-2 focus-visible:ring-[#f6eff3] rounded-md px-3 py-1.5 transition-colors"
               >
                 Subir otro archivo
